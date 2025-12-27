@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+body {
+  background-color: #f0fdf4; /* Un vert très très clair, apaisant */
+  overflow-x: hidden;
+}
+
+/* Désactive la sélection de texte pour éviter les surlignages accidentels par les enfants */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
+}

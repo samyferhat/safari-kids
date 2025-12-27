@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maquette - Safari Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #f0fdf4;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+        .card-bounce:active {
+            transform: scale(0.95);
+        }
+        .hidden { display: none; }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center p-4">
+
+    <!-- ECRAN D'ACCUEIL -->
+    <div id="view-home" class="flex flex-col items-center gap-8 animate-in fade-in duration-500">
+        <h1 class="text-6xl md:text-8xl font-bold text-green-500 drop-shadow-lg text-center">Safari Kids 🦁</h1>
+        <p class="text-2xl text-gray-600 font-medium">Prêt pour l'aventure ?</p>
+        
+        <div class="flex flex-col md:flex-row gap-8 w-full max-w-2xl px-4">
+            <button onclick="showView('learn')" class="flex-1 bg-blue-400 text-white rounded-[40px] p-8 shadow-[0_12px_0_#3b82f6] hover:translate-y-1 hover:shadow-[0_8px_0_#3b82f6] active:translate-y-3 active:shadow-none transition-all card-bounce">
+                <i data-lucide="book-open" class="w-20 h-20 mx-auto mb-4"></i>
+                <span class="text-4xl font-bold">Apprendre</span>
+            </button>
+            
+            <button onclick="showView('game')" class="flex-1 bg-orange-400 text-white rounded-[40px] p-8 shadow-[0_12px_0_#f97316] hover:translate-y-1 hover:shadow-[0_8px_0_#f97316] active:translate-y-3 active:shadow-none transition-all card-bounce">
+                <i data-lucide="play" class="w-20 h-20 mx-auto mb-4"></i>
+                <span class="text-4xl font-bold">Jouer</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ECRAN APPRENDRE -->
+    <div id="view-learn" class="hidden w-full h-full flex flex-col overflow-hidden">
+        <header class="flex items-center p-4">
+            <button onclick="showView('home')" class="bg-white p-4 rounded-full shadow-lg">
+                <i data-lucide="arrow-left" class="w-8 h-8 text-blue-500"></i>
+            </button>
+            <h2 class="text-4xl font-bold text-blue-500 ml-6">Mes Amis Animaux</h2>
+        </header>
+        
+        <div id="animal-grid" class="flex-1 grid grid-cols-2 md:grid-cols-4 gap-6 p-6 overflow-y-auto">
+            <!-- Injecté par JS -->
+        </div>
+    </div>
+
+    <!-- ECRAN JEU -->
+    <div id="view-game" class="hidden w-full h-full flex flex-col">
+        <header class="flex items-center justify-between p-4">
+            <button onclick="showView('home')" class="bg-white p-4 rounded-full shadow-lg">
+                <i data-lucide="arrow-left" class="w-8 h-8 text-orange-500"></i>
+            </button>
+            <div class="bg-white px-8 py-3 rounded-full shadow-lg text-3xl font-bold text-orange-500">
+                ⭐ <span id="score">0</span>
+            </div>
+        </header>
+
+        <div class="flex-1 flex flex-col items-center justify-center gap-12">
+            <div class="text-center">
+                <p class="text-3xl text-gray-500 mb-2 font-medium">Où se cache...</p>
+                <div class="flex items-center justify-center gap-4">
+                    <h2 id="target-name" class="text-6xl font-bold text-purple-600 uppercase tracking-wide">LION</h2>
+                    <button onclick="replayVoice()" class="bg-yellow-400 p-4 rounded-full shadow-md text-white">
+                        <i data-lucide="volume-2" class="w-8 h-8"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="game-options" class="flex flex-wrap justify-center gap-8 px-4 max-w-5xl">
+                <!-- Injecté par JS -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ANIMALS = [
+            { name: 'Lion', emoji: '🦁', color: 'bg-orange-400', sound: 'Je suis le lion ! Roaaar !' },
+            { name: 'Éléphant', emoji: '🐘', color: 'bg-blue-400', sound: 'Je suis l\'éléphant ! Tutuuuuut !' },
+            { name: 'Singe', emoji: '🐵', color: 'bg-amber-700', sound: 'Ouh ouh ah ah ! Je suis le singe !' },
+            { name: 'Grenouille', emoji: '🐸', color: 'bg-green-500', sound: 'Coa coa ! Je suis la grenouille !' },
+            { name: 'Chat', emoji: '🐱', color: 'bg-yellow-400', sound: 'Miaou ! Je suis le chat !' },
+            { name: 'Vache', emoji: '🐮', color: 'bg-gray-300', sound: 'Meuh ! Je suis la vache !' }
+        ];
+
+        let currentScore = 0;
+        let targetAnimal = null;
+
+        function speak(text) {
+            window.speechSynthesis.cancel();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'fr-FR';
+            msg.rate = 0.8;
+            window.speechSynthesis.speak(msg);
+        }
+
+        function showView(viewId) {
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-learn').classList.add('hidden');
+            document.getElementById('view-game').classList.add('hidden');
+            document.getElementById('view-' + viewId).classList.remove('hidden');
+
+            if (viewId === 'learn') initLearn();
+            if (viewId === 'game') initGame();
+        }
+
+        function initLearn() {
+            const grid = document.getElementById('animal-grid');
+            grid.innerHTML = '';
+            ANIMALS.forEach(a => {
+                const card = document.createElement('div');
+                card.className = `${a.color} rounded-[40px] p-6 flex flex-col items-center justify-center shadow-xl cursor-pointer card-bounce transform transition-transform`;
+                card.innerHTML = `<span class="text-8xl mb-4">${a.emoji}</span><span class="text-white text-3xl font-bold">${a.name}</span>`;
+                card.onclick = () => speak(a.sound);
+                grid.appendChild(card);
+            });
+        }
+
+        function initGame() {
+            targetAnimal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+            document.getElementById('target-name').innerText = targetAnimal.name;
+            
+            const options = [...ANIMALS].sort(() => 0.5 - Math.random()).slice(0, 3);
+            if (!options.includes(targetAnimal)) options[0] = targetAnimal;
+            options.sort(() => 0.5 - Math.random());
+
+            const container = document.getElementById('game-options');
+            container.innerHTML = '';
+            options.forEach(a => {
+                const card = document.createElement('div');
+                card.className = `${a.color} w-48 h-48 rounded-[40px] flex items-center justify-center shadow-xl cursor-pointer card-bounce transition-all border-8 border-white`;
+                card.innerHTML = `<span class="text-8xl">${a.emoji}</span>`;
+                card.onclick = (e) => checkAnswer(a, card);
+                container.appendChild(card);
+            });
+
+            setTimeout(() => speak(`Où est... ${targetAnimal.name} ?`), 500);
+        }
+
+        function checkAnswer(animal, element) {
+            if (animal.name === targetAnimal.name) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                speak("Bravo ! C'est gagné !");
+                currentScore++;
+                document.getElementById('score').innerText = currentScore;
+                setTimeout(initGame, 2000);
+            } else {
+                element.classList.add('shake');
+                speak("Oups ! Réessaie !");
+                setTimeout(() => element.classList.remove('shake'), 500);
+            }
+        }
+
+        function replayVoice() {
+            if (targetAnimal) speak(`Où est... ${targetAnimal.name} ?`);
+        }
+
+        // Init Lucide Icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
